@@ -1,0 +1,5 @@
+awslambdaric==2.0.7
+black==23.9.1
+boto3==1.28.61
+botocore==1.31.61
+moto==4.2.7

@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: An AWS Lambda function to run a Spark job.
+
+Resources:
+  SparkScriptBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: spark-script-bucket
+
+  SparkLambdaExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: SparkLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource:
+                  - !Sub 'arn:aws:s3:::spark-script-bucket/*'
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: 'arn:aws:logs:*:*:*'
+
+  SparkLambdaFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.8
+      CodeUri: lambda/one-up-health/transformation/lambda_function.py
+      Description: Lambda function to run Spark job.
+      MemorySize: 512
+      Timeout: 300
+      Role: !GetAtt SparkLambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          SCRIPT_BUCKET: ' medical-spark-scripts'
+          SPARK_SCRIPT: 'oneuphealth_transformation_spark_script.py'
+
+Outputs:
+  SparkLambdaFunction:
+    Description: 'Lambda Function ARN'
+    Value: !GetAtt SparkLambdaFunction.Arn

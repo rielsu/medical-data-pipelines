@@ -1,0 +1,13 @@
+test_data/*
+!test_data/.gitkeep
+
+.aws-sam
+.build
+.git
+.idea
+*.toml
+packaged-template.yaml
+
+__pycache__
+
+check_schema.py

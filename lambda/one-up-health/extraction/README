@@ -1,0 +1,96 @@
+
+# Testing with SAM
+
+This README provides instructions on how to test the extraction lambda function locally using the AWS Serverless Application Model (SAM) CLI.
+
+## Prerequisites
+
+1. Install the [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html).
+2. Ensure you have Docker installed and running.
+3. AWS credentials configured locally or you can use environment variables.
+
+## Steps to Test the Lambda Function
+
+1. **Navigate to the Lambda Directory**:
+   ```bash
+   cd path_to_lambda_directory
+   ```
+## Build the SAM Application:
+This step is required to download all the dependencies and prepare the lambda function for local execution.
+bash
+Copy code
+```bash
+sam build
+```
+
+## Invoke the Lambda Locally:
+Use the sam local invoke command to run the lambda function locally. If you have an event file, you can pass it using the -e flag.
+bash
+Copy code
+```bash
+sam local invoke -e event.json
+```
+
+Replace event.json with the path to your event file.
+If you don't have an event file, you can skip the -e flag, and SAM will use a default event.
+
+## Debugging (Optional):
+If you want to debug the lambda function, you can set up a debugging port and attach a debugger.
+bash
+Copy code
+```bash
+sam local invoke -e event.json -d 5890
+```
+
+This will start the lambda and pause execution until a debugger is attached to port 5890.
+View Logs:
+Logs are printed to the console by default. You can view the logs to debug any issues or to see the output.
+Cleanup
+
+Once you're done testing, you can simply stop the SAM CLI. If you started a debugger, ensure you detach it before stopping SAM.
+
+
+
+# Understanding the `template.yml` File
+
+The `template.yml` file is a Serverless Application Model (SAM) configuration file that defines our serverless application. It provides a concise syntax to express serverless resources and their connections. Here's a breakdown of its components:
+
+### AWSTemplateFormatVersion
+
+This field specifies the AWS CloudFormation template version. The value `'2010-09-09'` is currently the only valid value and indicates this is a CloudFormation template.
+
+```yaml
+AWSTemplateFormatVersion: '2010-09-09'
+```
+## Transform
+This field specifies the name of the macro that AWS CloudFormation uses to process the source template. The AWS::Serverless-2016-10-31 transform is a macro hosted by AWS CloudFormation. It processes the source template and returns a new template expanded to include additional AWS CloudFormation resources that are natively understood by AWS CloudFormation.
+
+yaml
+```yaml
+Transform: AWS::Serverless-2016-10-31
+```
+
+## Description
+A text string that describes the template. This is purely informational.
+
+yaml
+```yaml
+Description: An example SAM template for Lambda function.
+```
+
+Resources
+This section is where you declare AWS resources. For this template, we have a single Lambda function:
+
+## MyLambdaFunction
+
+This is the logical ID for the AWS Lambda function.
+
+Type: Specifies the resource type. In this case, it's a serverless function.
+Properties:
+Handler: The function that Lambda calls to start execution.
+Runtime: The identifier of the function's runtime. Here, it's set to python3.11.
+CodeUri: The location of the function code. The . means the code is in the same directory as the SAM template.
+Architectures: The architectures that the function supports. Here, it's set to x86_64 which means 64-bit architecture.
+Timeout: The amount of time that Lambda allows a function to run before stopping it. Here, it's set to 60 seconds.
+MemorySize: The amount of memory available to the function at runtime. Here, it's set to 1024 MB.
+Environment: Key-value pairs that Lambda sets as environment variables.

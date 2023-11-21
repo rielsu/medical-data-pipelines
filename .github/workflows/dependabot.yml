@@ -1,0 +1,38 @@
+name: CI-Dependabot
+on:
+  pull_request_target
+
+env:
+  AWS_DEFAULT_REGION: us-east-2
+  AWS_DEFAULT_OUTPUT: json
+  JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION: false
+
+jobs:
+  cdk-synth-dependabot:
+    name: Check CDK stacks
+    runs-on: ubuntu-latest
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    permissions:
+      actions: write
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Install dependencies for CDK
+        working-directory: ./cdk
+        run: npm install
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID_CI }}:role/ medicalOpenIdGithubRole
+          aws-region: us-east-2
+          role-session-name: data-pipelines-check
+
+      - name: CDK synth
+        working-directory: ./cdk
+        run: npx cdk synth --all -c stage=dev --require-approval never

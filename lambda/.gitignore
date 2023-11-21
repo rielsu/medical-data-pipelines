@@ -1,0 +1,9 @@
+venv/
+test_data/*
+!test_data/.gitkeep
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache

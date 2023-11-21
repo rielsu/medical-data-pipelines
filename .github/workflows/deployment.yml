@@ -1,0 +1,111 @@
+name: Deployment
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_DEFAULT_REGION: us-east-2
+  AWS_DEFAULT_OUTPUT: json
+  JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION: false
+
+jobs:
+  deploy-dev:
+    name: Deploy to dev
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      actions: write
+      contents: read
+      id-token: write
+    concurrency:
+      group: dev-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Install dependencies for CDK
+        working-directory: ./cdk
+        run: npm install
+
+      - name: Getting credentials for CDK
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID_DEV }}:role/ medicalOpenIdGithubRole
+          aws-region: us-east-2
+          role-session-name: data-pipelines-dev-deploy
+
+      - name: Deploy to dev
+        working-directory: ./cdk
+        run: npx cdk deploy --all -c stage=dev --require-approval never
+
+  deploy-stg:
+    name: Deploy to stg
+    runs-on: ubuntu-latest
+    environment: stg
+    needs:
+      - deploy-dev
+    permissions:
+      actions: write
+      contents: read
+      id-token: write
+    concurrency:
+      group: stg-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Install dependencies for CDK
+        working-directory: ./cdk
+        run: npm install
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID_STG }}:role/ medicalOpenIdGithubRole
+          aws-region: us-east-2
+          role-session-name: data-pipelines-stg-deploy
+
+      - name: CDK deploy
+        working-directory: ./cdk
+        run: npx cdk deploy --all -c stage=stg --require-approval never
+
+  deploy-prd:
+    name: Deploy to prd
+    runs-on: ubuntu-latest
+    environment: prd
+    needs:
+      - deploy-stg
+    permissions:
+      actions: write
+      contents: read
+      id-token: write
+    concurrency:
+      group: prd-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Install dependencies for CDK
+        working-directory: ./cdk
+        run: npm install
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID_PRD }}:role/ medicalOpenIdGithubRole
+          aws-region: us-east-2
+          role-session-name: data-pipelines-prd-deploy
+
+      - name: CDK deploy
+        working-directory: ./cdk
+        run: npx cdk deploy --all -c stage=prd --require-approval never

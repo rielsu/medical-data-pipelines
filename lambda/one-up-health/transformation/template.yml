@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: A sample SAM template for the Lambda function.
+
+Resources:
+  LoadingLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.11
+      CodeUri: .
+      MemorySize: 1024
+      Timeout: 600
+      Environment:
+        Variables:
+          DATA_LAKE_BUCKET_NAME: !Ref SourceBucket
+          DESTINATION_BUCKET_NAME: !Ref DestinationBucket
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref SourceBucket
+        - S3WritePolicy:
+            BucketName: !Ref DestinationBucket
+      Events:
+        S3Event:
+          Type: S3
+          Properties:
+            Bucket: !Ref SourceBucket
+            Events: s3:ObjectCreated:*
+
+Parameters:
+  SourceBucket:
+    Type: String
+    Default:  medical-dev-data-lake
+    Description: The name of the bucket to read from.
+
+  DestinationBucket:
+    Type: String
+    Default:  medical-dev-data-lake
+    Description: The name of the bucket to write to.
+
+Outputs:
+  LoadingLambdaFunction:
+    Description: "Lambda Function ARN"
+    Value: !GetAtt LoadingLambdaFunction.Arn
